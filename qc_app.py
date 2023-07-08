@@ -11,14 +11,15 @@ st.header('🎈 Quality control application')
 
 
 st.sidebar.markdown('''
-About
-Tis is a tool to allow quality control of two medicinal plants: Maytenus ilicifolia and Mikania laevigada
+About 
+This is a tool to allow quality control of two medicinal plants: Maytenus ilicifolia and Mikania laevigada
 
-Athors:
+Authors: blablabla
 
 First steps on how to use it:
- analyze your samples using a UHPLC-MS, ideally with the following parameters:
+ analyze your samples with replicates, using a UHPLC-MS, ideally with the following parameters
  transform the .raw data into mzXML via MSConvert using the code
+separate the mzXML files of each samples with all replicates into folders
  zip the files into a folder
  upload the folder into this application using the 'browse' button. 
  Click run and wait for the result to be shown!
@@ -45,11 +46,16 @@ command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
 
 if st.button('Run XCMS'):
     with st.spinner('Wait for it...'):
-        process1 = subprocess.Popen([command, xcms_xset1], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        result1 = process1.communicate()
-    st.success('Done!')
+        process1 = subprocess.run([command, xcms_xset1], capture_output = True)
+        result=process1.stdout
+        print(process1.stdout)
+        print(process1.stderr)
 
-    st.write(result1) 
+    st.success('Done!')
+    st.write(process1.stdout) 
+    # warning messages
+    #st.write(process1.stderr) 
+
 
 with st.expander('See script'):
   code1 = '''
