@@ -1,6 +1,7 @@
-suppressPackageStartupMessages(library(xcms))
-suppressPackageStartupMessages(library(CAMERA))
 options(warn=-1)
+suppressMessages(library(xcms))
+suppressMessages(library(CAMERA))
+
 
 xset <- xcmsSet( 
         method   = "matchedFilter",

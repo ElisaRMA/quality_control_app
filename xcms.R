@@ -1,6 +1,8 @@
+options(warn=-1)
 
-suppressPackageStartupMessages(library(xcms))
-suppressPackageStartupMessages(library(CAMERA))
+suppressMessages(library(xcms))
+suppressMessages(library(CAMERA))
+
 
 
 xset <- xcmsSet( 
