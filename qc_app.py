@@ -7,8 +7,21 @@ import zipfile
 import glob
 import io
 import pickle
+import time
+from tabulate import tabulate
+from sklearn.svm import SVC
+#from sklearn import metrics
+
+#from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+#from sklearn.model_selection import PredefinedSplit
+#from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 # ----------- Python pipeline functions ----------- #
+st.set_page_config(layout="wide")
 
 @st.cache_resource
 def rounder(dataframe):
@@ -196,14 +209,15 @@ def data_prep(ref_data,target_data):
     
     return target_data
 
-@st.cache_resource
-def load_model(model_path):
+@st.cache_data
+def load_model():
     '''
     
     model_path: path to model file. Eg: 'C:/Users/name/Documents/dev/model.pkl'
     
     '''
-    pickled_model = pickle.load(open(model_path, 'rb'))
+    pickled_model = pickle.load(open('model.pkl', 'rb'))
+    return pickled_model
 
 @st.cache_resource
 def load_refdata():
@@ -212,73 +226,80 @@ def load_refdata():
     '''
     return pd.read_csv('ref_data.csv')
 
-# Application
+# ----------- objects to run locally ----------- #
 
-
+# add Rscript into path variable
 os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
 
 
-st.header('🎈 Quality control application')
+# ----------- App ----------- #
 
+st.header('MedPlant-AI: an AI-based Quality Control tool for Medicinal Plants')
 
 st.sidebar.markdown('''
-About 
-This is a tool to allow quality control of two medicinal plants: Maytenus ilicifolia and Mikania laevigada
 
-Authors: blablabla
+Welcome to the MedPlant-AI!
 
-First steps on how to use it:
- analyze your samples with replicates, using a UHPLC-MS, ideally with the following parameters
- transform the .raw data into mzXML via MSConvert using the code
-separate the mzXML files of each samples with all replicates into folders
- zip the files into a folder
- upload the folder into this application using the 'browse' button. 
- Click run and wait for the result to be shown!
+                    
+This is an AI-driven tool designed for quality control of two medicinal plants: *Maytenus ilicifolia* and *Mikania laevigata*.
+The purpose of MedPlant-AI is to allow the analysis of multiple samples at once, so that the quality control process becomes faster and more reliable. 
+This tool is meant to be used after the metabolomics analysis of the plant material using UHPLC-MS, on the mzXML data converted. 
+
+                                              
+
+How to use MedPlant-AI:                                     
+
+
+1. Analyze your samples with replicates, using an HPLC-MS equipment, ideally using the method especified on the paper or on the GitHub repository [link]. 
+For the extractions, follow the Brazillian Fitoterapy formulary, in which aqueous extract is instructed for *Maytenus ilicifolia* and hydroethanolic extract is instructed for *Mikania laevigata*.
+For the chromatographic method, the most important aspect is the ionization and detection mode. Use only the negative ionization mode and the 'centroid' detection method. 
+
+                    
+2. Convert the .raw data into mzXML via msconvert, a command line tool. The code for the transformation is on the GitHub repository.
+
+                    
+3. Split the converted mzXML into folders, one for each sample and its replicates. Then, place these folder into a directory, zip this directory and upload it to the MedPlant-AI.
+st.sidebar.image                    
+                   
 
 ''')
 
+st.sidebar.info('''To understand more about this tool and how to use it, we recommend you to access the GitHub [repository](https://github.com/ElisaRMA/quality_control_app).''')
 
-
-#path_file = os.path.exists(path2script)
-#path_command = os.path.exists(command)
-#st.title(path_file)
-#st.title(path_command)
-
-
-st.subheader('1. testing R')
+st.subheader('1. Preprocessing metabolomics data')
 
 # files need to be in a zipped folder
 uploaded_files = st.file_uploader('Choose a zipped folder with subfolders for each sample. Each file also needs to be in the mzXML format.', type='zip', accept_multiple_files=False, help='Only rar files are accepted')
 
-# is to get the R scripts
+# to get the xcms R scripts
 xcms = os.getcwd() + "\\xcms.R"
 
-# to get the R on local machine
+# R.exe on local machine
 command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
 
-# just a object placeholder
+# object placeholder to tbe filled later
 output_folder = "output"
 
 # if the button is pressed and something was uploaded, continue
 if st.button('Run XCMS') and uploaded_files is not None:
     
-    # Read the uploaded zip folder from memory
+    # Read the uploaded zip folder
     zip_file_bytes = uploaded_files.getvalue()
     
-    # loading symbol
-    with st.spinner('Wait for it...'):
+    # loading symbol - keeps running as the script is running
+    with st.spinner('Please wait ...'):
         
         # Create the output folder if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
             
-        # Extract the uploaded zip file contents 
+        # Extract the uploaded zip file contents into the folder
         with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
             zip_ref.extractall(output_folder)
         
         # Run XCMS on the extracted files - outputfolder has the subfolders for each sample and their replicates
         process1 = subprocess.run([command, xcms], stdout=subprocess.PIPE, cwd=output_folder)
     
-    st.success('Done!')
+    st.success('Done! This is the data that will be used for the Machine Learning model:')
     #st.write(process1.stdout) 
 
     # Find the generated CSV file
@@ -288,9 +309,26 @@ if st.button('Run XCMS') and uploaded_files is not None:
     if len(csv_files) > 0:
         csv_file = csv_files[0]
         input_data = pd.read_csv(csv_file, index_col=[0])
-        st.session_state.input_data = input_data
-        st.dataframe(input_data)  # Display the DataFrame
+        #st.session_state.input_data = input_data
+        #st.dataframe(input_data)  # Display the DataFrame
 
+        subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
+
+        # Print the subfolder names and the folder names inside each subfolder
+        #st.write("Subfolder names:")
+        for subfolder_name in subfolder_names:
+            #st.write(subfolder_name)
+            subfolder_path = os.path.join(output_folder, subfolder_name)
+            folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
+            #st.write(folder_names)
+            #st.write("Folder names inside", subfolder_name, ":")
+            #for folder_name in folder_names:
+            #    st.write(folder_name)
+        st.session_state.input_data = input_data.drop(folder_names,axis=1)
+        st.dataframe(input_data.drop(folder_names,axis=1))  # Display the DataFrame
+
+
+####### fix! download does not have the data and it deletes the rest of the output #######
         st.download_button(
             "Download CSV",
             csv_file,
@@ -359,29 +397,31 @@ write.csv(getPeaklist(anIC), file="data.csv") # generates a table of features
  
   st.code(code1, language='R')
 
+st.subheader('2. Sample classification')
 
 if st.button('Run Machine Learning Prediction'):
     if 'input_data' in st.session_state:
-        input_data = st.session_state.input_data
-        st.dataframe(input_data)
-
+        with st.spinner('Please wait...'):
+            time.sleep(3)
+            input_data = st.session_state.input_data
+            st.dataframe(input_data)
 
 # load the training dataset - its used as standard for the feature name generation
-        ref_training_data = pd.read_csv('ref_data.csv')
+            ref_training_data = pd.read_csv('ref_data.csv')
 
 # Using the data from previous steps
-        input_data_rounded = rounder(input_data.drop(['isotopes', 'adduct','pcgroup'], axis=1))
+            input_data_rounded = rounder(input_data.drop(['isotopes', 'adduct','pcgroup'], axis=1))
 
 # create the feature names on val set
-        input_data_feat = feature_correspondance(ref_training_data, input_data_rounded)
+            input_data_feat = feature_correspondance(ref_training_data, input_data_rounded)
 
 # clean and prep val set
-        ref_data,input_data_clean = data_cleaning(ref_training_data,input_data_feat)
-        input_data_prep = data_prep(ref_training_data,input_data_clean)
+            ref_data,input_data_clean = data_cleaning(ref_training_data,input_data_feat)
+            input_data_prep = data_prep(ref_training_data,input_data_clean)
 
-        input_data_prep = input_data_prep.set_index('index').T
+            input_data_prep = input_data_prep.set_index('index').T
 
-        features = ['103_57.3', '117_112.9', '129_35.7', '129_36.0', '129_36.6', '130_39.3', '137_201.8', 
+            features = ['103_57.3', '117_112.9', '129_35.7', '129_36.0', '129_36.6', '130_39.3', '137_201.8', 
             '138_202.4', '153_204.6', '161_317.4', '163_269.1', '163_282.9', '163_300.4', '164_207.3', 
             '164_239.7', '164_272.8', '165_295.0', '166_255.8', '173_71.3', '179_235.4', '181_39.5', 
             '187_339.3', '187_339.9', '191_211.3', '191_42.7', '195_43.1', '195_43.4', '205_270.0', 
@@ -429,8 +469,21 @@ if st.button('Run Machine Learning Prediction'):
             '863_180.3', '865_182.1', '866_186.0', '867_171.1', '868_195.0', '868_228.4', '869_195.5', 
             '869_204.4', '870_207.3', '871_175.3', '889_187.7']
 
-        input_data_model = input_data_prep[features]
+            input_data_model = input_data_prep[features]
 
-        st.write(input_data_model)
+            st.dataframe(input_data_model)
+        
 
-# start the feature eng
+            model = load_model()    
+
+            result = pd.DataFrame(input_data_model.index)
+
+            result['prediction'] = model.predict(input_data_model)
+            result.rename(columns={0:'sample'},inplace=True)
+            result.loc[result.prediction > 0, 'prediction'] = '*Maytenus ilicifolia*'
+            result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
+
+            result_markdown = tabulate(result, headers='keys', tablefmt='pipe')
+
+            st.success('Done! Here is the sample classification:')
+            st.markdown(result_markdown, unsafe_allow_html=True)
