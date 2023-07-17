@@ -210,13 +210,23 @@ def data_prep(ref_data,target_data):
     return target_data
 
 @st.cache_data
-def load_model():
+def load_model_maytenus():
     '''
     
     model_path: path to model file. Eg: 'C:/Users/name/Documents/dev/model.pkl'
     
     '''
     pickled_model = pickle.load(open('model.pkl', 'rb'))
+    return pickled_model
+
+@st.cache_data
+def load_model_mikania():
+    '''
+    
+    model_path: path to model file. Eg: 'C:/Users/name/Documents/dev/model.pkl'
+    
+    '''
+    pickled_model = pickle.load(open('model_mikania.pkl', 'rb'))
     return pickled_model
 
 @st.cache_resource
@@ -268,11 +278,17 @@ st.sidebar.info('''To understand more about this tool and how to use it, we reco
 
 st.subheader('1. Preprocessing metabolomics data')
 
+option = st.selectbox(
+    'Select the species to perform quality control:',
+    ('Maytenus ilicifolia', 'Mikania laevigata'))
+
+
 # files need to be in a zipped folder
 uploaded_files = st.file_uploader('Choose a zipped folder with subfolders for each sample. Each file also needs to be in the mzXML format.', type='zip', accept_multiple_files=False, help='Only rar files are accepted')
 
 # to get the xcms R scripts
-xcms = os.getcwd() + "\\xcms.R"
+xcms_may = os.getcwd() + "\\xcms.R"
+xcms_mik = os.getcwd() + "\\xcms.R"
 
 # R.exe on local machine
 command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
@@ -280,68 +296,104 @@ command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
 # object placeholder to tbe filled later
 output_folder = "output"
 
-# if the button is pressed and something was uploaded, continue
+
 if st.button('Run XCMS') and uploaded_files is not None:
-    
+    if option == 'Maytenus ilicifolia':
     # Read the uploaded zip folder
-    zip_file_bytes = uploaded_files.getvalue()
+        zip_file_bytes = uploaded_files.getvalue()
     
-    # loading symbol - keeps running as the script is running
-    with st.spinner('Please wait ...'):
+    # loading symbol 
+        with st.spinner('Please wait ...'):
         
-        # Create the output folder if it doesn't exist
-        os.makedirs(output_folder, exist_ok=True)
+        # Create the output folder, unzips content to it, runs r script
+            os.makedirs(output_folder, exist_ok=True)
             
-        # Extract the uploaded zip file contents into the folder
-        with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
-            zip_ref.extractall(output_folder)
+            with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
+                zip_ref.extractall(output_folder)
         
-        # Run XCMS on the extracted files - outputfolder has the subfolders for each sample and their replicates
-        process1 = subprocess.run([command, xcms], stdout=subprocess.PIPE, cwd=output_folder)
+            process1 = subprocess.run([command, xcms_may], stdout=subprocess.PIPE, cwd=output_folder)
     
-    st.success('Done! This is the data that will be used for the Machine Learning model:')
-    #st.write(process1.stdout) 
+        st.success('Done! This is the data that will be used for the Machine Learning model:')
 
     # Find the generated CSV file
-    csv_files = glob.glob(os.path.join(output_folder, '*.csv'))
-    
+        csv_files = glob.glob(os.path.join(output_folder, '*.csv'))
 
-    if len(csv_files) > 0:
-        csv_file = csv_files[0]
-        input_data = pd.read_csv(csv_file, index_col=[0])
-        #st.session_state.input_data = input_data
-        #st.dataframe(input_data)  # Display the DataFrame
+        if len(csv_files) > 0:
+            csv_file = csv_files[0]
+            input_data = pd.read_csv(csv_file, index_col=[0])
 
-        subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
+        # gets the folder names to delete the columns un the csv
+            subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
 
-        # Print the subfolder names and the folder names inside each subfolder
-        #st.write("Subfolder names:")
-        for subfolder_name in subfolder_names:
+            for subfolder_name in subfolder_names:
             #st.write(subfolder_name)
-            subfolder_path = os.path.join(output_folder, subfolder_name)
-            folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
-            #st.write(folder_names)
-            #st.write("Folder names inside", subfolder_name, ":")
-            #for folder_name in folder_names:
-            #    st.write(folder_name)
-        st.session_state.input_data = input_data.drop(folder_names,axis=1)
-        st.dataframe(input_data.drop(folder_names,axis=1))  # Display the DataFrame
+                subfolder_path = os.path.join(output_folder, subfolder_name)
+                folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
 
+        # stores the data in session and drops the folder names from the df
+            st.session_state.input_data = input_data.drop(folder_names,axis=1)
+            st.dataframe(input_data.drop(folder_names,axis=1))  
 
 ####### fix! download does not have the data and it deletes the rest of the output #######
-        st.download_button(
+            st.download_button(
             "Download CSV",
             csv_file,
             os.path.basename(csv_file),
             "text/csv",
             key='download-csv'
-        )
+            )
+        else:
+            st.warning('No CSV file found in the output.')
     else:
-        st.warning('No CSV file found in the output.')
+            # Read the uploaded zip folder
+        zip_file_bytes = uploaded_files.getvalue()
+    
+    # loading symbol 
+        with st.spinner('Please wait ...'):
+        
+        # Create the output folder, unzips content to it, runs r script
+            os.makedirs(output_folder, exist_ok=True)
+            
+            with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
+                zip_ref.extractall(output_folder)
+        
+            process1 = subprocess.run([command, xcms_mik], stdout=subprocess.PIPE, cwd=output_folder)
+    
+        st.success('Done! This is the data that will be used for the Machine Learning model:')
 
+    # Find the generated CSV file
+        csv_files = glob.glob(os.path.join(output_folder, '*.csv'))
+
+        if len(csv_files) > 0:
+            csv_file = csv_files[0]
+            input_data = pd.read_csv(csv_file, index_col=[0])
+
+        # gets the folder names to delete the columns un the csv
+            subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
+
+            for subfolder_name in subfolder_names:
+            #st.write(subfolder_name)
+                subfolder_path = os.path.join(output_folder, subfolder_name)
+                folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
+
+        # stores the data in session and drops the folder names from the df
+            st.session_state.input_data = input_data.drop(folder_names,axis=1)
+            st.dataframe(input_data.drop(folder_names,axis=1))  
+
+####### fix! download does not have the data and it deletes the rest of the output #######
+            st.download_button(
+            "Download CSV",
+            csv_file,
+            os.path.basename(csv_file),
+            "text/csv",
+            key='download-csv'
+            )
+        else:
+            st.warning('No CSV file found in the output.')
 
 with st.expander('See xcms script'):
-  code1 = '''
+    if option == 'Maytenus ilicifolia':
+        code1 = '''
   
 library(xcms)
 library(CAMERA)
@@ -370,7 +422,6 @@ xset2 <- retcor(
         factorGap      = 1,
         localAlignment = 0)
 
-
 xset3 <- group( 
         xset2,
         method  = "density",
@@ -394,34 +445,87 @@ anFA <- findAdducts(anIC, polarity="negative")
 
 write.csv(getPeaklist(anIC), file="data.csv") # generates a table of features
 '''
- 
-  st.code(code1, language='R')
+        st.code(code1, language='R')
+    else:
+        code2 = ''' 
+library(xcms)
+library(CAMERA)
+
+xset <- xcmsSet( 
+        method   = "matchedFilter",
+        fwhm     = 7.5,
+        snthresh = 1,
+        step     = 1,
+        steps    = 6,
+        sigma    = 3.18498386274843,
+        max      = 5,
+        mzdiff   = -5.2,
+        index    = FALSE)
+
+xset2 <- retcor( 
+        xset,
+        method         = "obiwarp",
+        plottype       = "none",
+        distFunc       = "cor_opt",
+        profStep       = 1,
+        response       = 1,
+        gapInit        = 0,
+        gapExtend      = 2.7,
+        factorDiag     = 2,
+        factorGap      = 1,
+        localAlignment = 0)
+
+xset3 <- group( 
+        xset2,
+        method  = "density",
+        bw      = 22,
+        mzwid   = 1,
+        minfrac = 0.3,
+        minsamp = 1,
+        max     = 50)
+
+xset4 <- fillPeaks(xset3)
+
+an <- xsAnnotate(xset4)
+
+anF <- groupFWHM(an, perfwhm = 0.6)
+
+anI <- findIsotopes(anF, mzabs=0.01)
+
+anIC <- groupCorr(anI, cor_eic_th=0.75)
+
+anFA <- findAdducts(anIC, polarity="negative")
+
+write.csv(getPeaklist(anIC), file='data.csv') # generates a table of features
+ '''
+        st.code(code2, language='R')
 
 st.subheader('2. Sample classification')
 
-if st.button('Run Machine Learning Prediction'):
-    if 'input_data' in st.session_state:
-        with st.spinner('Please wait...'):
-            time.sleep(3)
-            input_data = st.session_state.input_data
-            st.dataframe(input_data)
+# checkbox / selector on the species
+# if one is selected, run the code below, 
+# if another is selected, run the other code
 
-# load the training dataset - its used as standard for the feature name generation
-            ref_training_data = pd.read_csv('ref_data.csv')
 
-# Using the data from previous steps
-            input_data_rounded = rounder(input_data.drop(['isotopes', 'adduct','pcgroup'], axis=1))
+if option == 'Maytenus ilicifolia':
+    if st.button('Run Machine Learning Prediction for Maytenus ilicifolia'):
 
-# create the feature names on val set
-            input_data_feat = feature_correspondance(ref_training_data, input_data_rounded)
+        if 'input_data' in st.session_state:
+            with st.spinner('Please wait...'):
+                time.sleep(3)
+                input_data = st.session_state.input_data
+                st.dataframe(input_data)
 
-# clean and prep val set
-            ref_data,input_data_clean = data_cleaning(ref_training_data,input_data_feat)
-            input_data_prep = data_prep(ref_training_data,input_data_clean)
+# feature engineering pipeline
+                ref_training_data = pd.read_csv('ref_data_maytenus.csv')
+                input_data_rounded = rounder(input_data.drop(['isotopes', 'adduct','pcgroup'], axis=1))
+                input_data_feat = feature_correspondance(ref_training_data, input_data_rounded)
+                ref_data,input_data_clean = data_cleaning(ref_training_data,input_data_feat)
+                input_data_prep = data_prep(ref_training_data,input_data_clean)
+                input_data_prep = input_data_prep.set_index('index').T
 
-            input_data_prep = input_data_prep.set_index('index').T
-
-            features = ['103_57.3', '117_112.9', '129_35.7', '129_36.0', '129_36.6', '130_39.3', '137_201.8', 
+# feature selection
+                features = ['103_57.3', '117_112.9', '129_35.7', '129_36.0', '129_36.6', '130_39.3', '137_201.8', 
             '138_202.4', '153_204.6', '161_317.4', '163_269.1', '163_282.9', '163_300.4', '164_207.3', 
             '164_239.7', '164_272.8', '165_295.0', '166_255.8', '173_71.3', '179_235.4', '181_39.5', 
             '187_339.3', '187_339.9', '191_211.3', '191_42.7', '195_43.1', '195_43.4', '205_270.0', 
@@ -469,21 +573,83 @@ if st.button('Run Machine Learning Prediction'):
             '863_180.3', '865_182.1', '866_186.0', '867_171.1', '868_195.0', '868_228.4', '869_195.5', 
             '869_204.4', '870_207.3', '871_175.3', '889_187.7']
 
-            input_data_model = input_data_prep[features]
+                input_data_model = input_data_prep[features]
 
-            st.dataframe(input_data_model)
+                st.dataframe(input_data_model)
         
+# prediction
+                model_maytenus = load_model_maytenus()    
 
-            model = load_model()    
+                result = pd.DataFrame(input_data_model.index)
 
-            result = pd.DataFrame(input_data_model.index)
+                result['prediction'] = model_maytenus.predict(input_data_model)
 
-            result['prediction'] = model.predict(input_data_model)
-            result.rename(columns={0:'sample'},inplace=True)
-            result.loc[result.prediction > 0, 'prediction'] = '*Maytenus ilicifolia*'
-            result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
+                result.rename(columns={0:'sample'},inplace=True)
 
-            result_markdown = tabulate(result, headers='keys', tablefmt='pipe')
+                result.loc[result.prediction > 0, 'prediction'] = '*Maytenus ilicifolia*'
+                result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
 
-            st.success('Done! Here is the sample classification:')
-            st.markdown(result_markdown, unsafe_allow_html=True)
+# processing the result to show
+                result_markdown = tabulate(result, headers='keys', tablefmt='pipe')
+                st.success('Done! Here is the sample classification:')
+                st.markdown(result_markdown, unsafe_allow_html=True)
+else:   
+    if st.button('Run Machine Learning Prediction for Mikania laevigata'):
+
+        if 'input_data' in st.session_state:
+            with st.spinner('Please wait...'):
+                time.sleep(3)
+                input_data = st.session_state.input_data
+                st.dataframe(input_data)
+
+# feature engineering pipeline
+                ref_training_data = pd.read_csv('ref_data_mikania.csv')
+                input_data_rounded = rounder(input_data.drop(['isotopes', 'adduct','pcgroup'], axis=1))
+                input_data_feat = feature_correspondance(ref_training_data, input_data_rounded)
+                ref_data,input_data_clean = data_cleaning(ref_training_data,input_data_feat)
+                input_data_prep = data_prep(ref_training_data,input_data_clean)
+                input_data_prep = input_data_prep.set_index('index').T
+
+# feature selection
+                features = ['1000_336.4', '119_269.9', '119_335.1', '121_317.2', '122_318.9', '145_527.0', '163_179.5', 
+                            '163_244.0', '163_335.3', '165_226.6', '165_317.6', '165_331.3', '166_227.0', '206_402.0', 
+                            '210_221.6', '240_397.6', '241_385.8', '264_421.2', '301_360.6', '303_547.0', '324_236.3', 
+                            '326_178.3', '326_178.7', '326_243.6', '326_244.0', '327_227.2', '328_227.3', '329_226.3', 
+                            '348_310.1', '349_169.8', '350_334.5', '358_303.0', '362_242.7', '362_243.1', '363_328.2', 
+                            '364_227.4', '368_236.2', '368_338.6', '372_246.0', '378_43.9', '381_148.0', '387_206.9', 
+                            '388_208.9', '388_209.6', '388_515.2', '389_515.1', '390_514.7', '398_370.2', '401_353.7', 
+                            '402_353.0', '403_350.2', '404_321.8', '404_463.1', '405_325.4', '406_325.8', '407_324.9', 
+                            '422_525.9', '448_530.0', '482_265.5', '483_264.8', '488_345.3', '488_515.1', '488_573.2', 
+                            '489_334.6', '490_572.8', '500_339.2', '506_312.4', '521_535.7', '522_527.1', '526_264.8', 
+                            '526_355.0', '527_263.7', '528_264.9', '530_341.7', '532_43.0', '533_43.2', '534_43.0', 
+                            '535_211.4', '535_43.1', '536_43.2', '548_250.7', '548_327.8', '548_530.2', '549_309.4', 
+                            '549_531.1', '560_313.9', '572_349.6', '572_350.2', '574_375.2', '575_376.7', '576_380.0', 
+                            '586_500.6', '587_512.6', '588_513.9', '610_275.3', '624_310.9', '626_329.5', '641_281.4', 
+                            '650_332.4', '651_285.0', '652_178.9', '652_243.6', '652_315.1', '653_233.8', '653_315.7', 
+                            '654_227.6', '654_327.3', '655_225.1', '655_328.7', '656_226.6', '658_574.1', '674_243.2', 
+                            '680_176.0', '680_178.3', '680_346.9', '681_229.6', '682_174.2', '682_229.8', '687_200.9', 
+                            '688_206.1', '688_206.2', '696_330.3', '697_290.4', '699_344.3', '700_345.9', '701_176.6', 
+                            '707_346.3', '710_347.4', '712_319.2', '799_406.7', '800_406.6', '840_204.7', '874_348.3', 
+                            '876_358.1', '877_357.5', '878_356.8', '904_379.5', '918_352.7', '918_361.2', '920_358.2', 
+                            '920_358.5', '928_313.5', '940_39.9', '946_388.4', '963_363.0', '985_574.1']
+
+                input_data_model = input_data_prep[features]
+
+                st.dataframe(input_data_model)
+        
+# prediction
+                model_mikania = load_model_mikania()    
+
+                result = pd.DataFrame(input_data_model.index)
+
+                result['prediction'] = model_mikania.predict(input_data_model)
+
+                result.rename(columns={0:'sample'},inplace=True)
+
+                result.loc[result.prediction > 0, 'prediction'] = '*Mikania laevigata*'
+                result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
+
+# processing the result to show
+                result_markdown = tabulate(result, headers='keys', tablefmt='pipe')
+                st.success('Done! Here is the sample classification:')
+                st.markdown(result_markdown, unsafe_allow_html=True)
