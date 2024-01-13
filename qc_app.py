@@ -8,7 +8,7 @@ import glob
 import io
 import pickle
 import time
-#from tabulate import tabulate
+from tabulate import tabulate
 from sklearn.svm import SVC
 #from sklearn import metrics
 
@@ -246,7 +246,7 @@ def load_refdata_maytenus():
 # ----------- objects to run locally ----------- #
 
 # add Rscript into path variable
-os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
+#os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
 
 # ----------- App ----------- #
 
