@@ -1,17 +1,15 @@
 library(xcms)
-library(Rmpi)
 library(CAMERA)
-library(beepr)
 
 xset <- xcmsSet( 
         method   = "matchedFilter",
-        fwhm     = 7.5,
-        snthresh = 1,
-        step     = 1,
-        steps    = 6,
+        fwhm     = 28,#7.5
+        snthresh = 3,
+        step     = 1, # numeric(1) specifying the width of the bins/slices in m/z dimension
+        steps    = 6, # numeric(1) defining the number of bins to be merged before filtration (i.e. the number of neighboring bins that will be joined to the slice in which filtration and peak detection will be performed).
         sigma    = 3.18498386274843,
-        max      = 5,
-        mzdiff   = -5.2,
+        max      = 3,# 5
+        mzdiff   = 1, 
         index    = FALSE)
 
 xset2 <- retcor( 
@@ -53,4 +51,4 @@ anI <- findIsotopes(anF, mzabs=0.01)
 anIC <- groupCorr(anI, cor_eic_th=0.75)
 anFA <- findAdducts(anIC, polarity="negative") #change polarity accordingly
 
-write.csv(getPeaklist(anIC), file='data.csv') # generates a table of features
+write.csv(getPeaklist(anIC), file='test.csv') # generates a table of features

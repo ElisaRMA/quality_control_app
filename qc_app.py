@@ -216,7 +216,7 @@ def load_model_maytenus():
     model_path: path to model file. Eg: 'C:/Users/name/Documents/dev/model.pkl'
     
     '''
-    pickled_model = pickle.load(open('model.pkl', 'rb'))
+    pickled_model = pickle.load(open('model_maytenus.pkl', 'rb'))
     return pickled_model
 
 @st.cache_data
@@ -230,17 +230,23 @@ def load_model_mikania():
     return pickled_model
 
 @st.cache_resource
-def load_refdata():
+def load_refdata_mikania():
     '''
     returns the data used for training. It will be a reference data to create the feature names of input data.
     '''
-    return pd.read_csv('ref_data.csv')
+    return pd.read_csv('ref_data_mikania.csv')
+
+@st.cache_resource
+def load_refdata_maytenus():
+    '''
+    returns the data used for training. It will be a reference data to create the feature names of input data.
+    '''
+    return pd.read_csv('ref_data_maytenus.csv')
 
 # ----------- objects to run locally ----------- #
 
 # add Rscript into path variable
 os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
-
 
 # ----------- App ----------- #
 
@@ -282,20 +288,22 @@ option = st.selectbox(
     'Select the species to perform quality control:',
     ('Maytenus ilicifolia', 'Mikania laevigata'))
 
+#st.write(option)
+
 
 # files need to be in a zipped folder
 uploaded_files = st.file_uploader('Choose a zipped folder with subfolders for each sample. Each file also needs to be in the mzXML format.', type='zip', accept_multiple_files=False, help='Only rar files are accepted')
 
 # to get the xcms R scripts
-xcms_may = os.getcwd() + "\\xcms.R"
-xcms_mik = os.getcwd() + "\\xcms.R"
+xcms_may = os.getcwd() + "\\xcms_may.R"
+xcms_mik = os.getcwd() + "\\xcms_mik.R"
 
 # R.exe on local machine
 command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
 
 # object placeholder to tbe filled later
 output_folder = "output"
-
+output_folder_mik = "output_mik"
 
 if st.button('Run XCMS') and uploaded_files is not None:
     if option == 'Maytenus ilicifolia':
@@ -317,16 +325,15 @@ if st.button('Run XCMS') and uploaded_files is not None:
 
     # Find the generated CSV file
         csv_files = glob.glob(os.path.join(output_folder, '*.csv'))
-
         if len(csv_files) > 0:
             csv_file = csv_files[0]
             input_data = pd.read_csv(csv_file, index_col=[0])
 
-        # gets the folder names to delete the columns un the csv
+        # gets the folder names to delete the columns on the csv
             subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
 
             for subfolder_name in subfolder_names:
-            #st.write(subfolder_name)
+                #st.write(subfolder_name)
                 subfolder_path = os.path.join(output_folder, subfolder_name)
                 folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
 
@@ -352,28 +359,28 @@ if st.button('Run XCMS') and uploaded_files is not None:
         with st.spinner('Please wait ...'):
         
         # Create the output folder, unzips content to it, runs r script
-            os.makedirs(output_folder, exist_ok=True)
+            os.makedirs(output_folder_mik, exist_ok=True)
             
             with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
-                zip_ref.extractall(output_folder)
+                zip_ref.extractall(output_folder_mik)
         
-            process1 = subprocess.run([command, xcms_mik], stdout=subprocess.PIPE, cwd=output_folder)
+            process1 = subprocess.run([command, xcms_mik], stdout=subprocess.PIPE, cwd=output_folder_mik)
     
         st.success('Done! This is the data that will be used for the Machine Learning model:')
 
     # Find the generated CSV file
-        csv_files = glob.glob(os.path.join(output_folder, '*.csv'))
+        csv_files = glob.glob(os.path.join(output_folder_mik, '*.csv'))
 
         if len(csv_files) > 0:
             csv_file = csv_files[0]
             input_data = pd.read_csv(csv_file, index_col=[0])
 
         # gets the folder names to delete the columns un the csv
-            subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
+            subfolder_names = [name for name in os.listdir(output_folder_mik) if os.path.isdir(os.path.join(output_folder_mik, name))]
 
             for subfolder_name in subfolder_names:
             #st.write(subfolder_name)
-                subfolder_path = os.path.join(output_folder, subfolder_name)
+                subfolder_path = os.path.join(output_folder_mik, subfolder_name)
                 folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
 
         # stores the data in session and drops the folder names from the df
@@ -453,13 +460,13 @@ library(CAMERA)
 
 xset <- xcmsSet( 
         method   = "matchedFilter",
-        fwhm     = 7.5,
-        snthresh = 1,
-        step     = 1,
+        fwhm     = 28,#7.5
+        snthresh = 3,
+        step     = 1, 
         steps    = 6,
         sigma    = 3.18498386274843,
-        max      = 5,
-        mzdiff   = -5.2,
+        max      = 3,# 5
+        mzdiff   = 1, 
         index    = FALSE)
 
 xset2 <- retcor( 
@@ -483,8 +490,6 @@ xset3 <- group(
         minfrac = 0.3,
         minsamp = 1,
         max     = 50)
-
-xset4 <- fillPeaks(xset3)
 
 an <- xsAnnotate(xset4)
 
@@ -525,55 +530,24 @@ if option == 'Maytenus ilicifolia':
                 input_data_prep = input_data_prep.set_index('index').T
 
 # feature selection
-                features = ['103_57.3', '117_112.9', '129_35.7', '129_36.0', '129_36.6', '130_39.3', '137_201.8', 
-            '138_202.4', '153_204.6', '161_317.4', '163_269.1', '163_282.9', '163_300.4', '164_207.3', 
-            '164_239.7', '164_272.8', '165_295.0', '166_255.8', '173_71.3', '179_235.4', '181_39.5', 
-            '187_339.3', '187_339.9', '191_211.3', '191_42.7', '195_43.1', '195_43.4', '205_270.0', 
-            '206_277.8', '206_281.9', '207_328.8', '210_46.4', '210_47.6', '210_50.8', '215_41.2', 
-            '222_212.3', '227_38.6', '232_70.8', '235_45.1', '245_36.0', '245_39.9', '246_47.9', 
-            '259_172.1', '261_168.0', '261_193.0', '272_223.2', '272_274.4', '273_251.5', '273_255.5', 
-            '279_291.7', '284_240.6', '285_198.0', '286_197.6', '287_85.7', '289_221.7', '293_315.1', 
-            '294_444.9', '294_445.0', '296_65.2', '303_57.0', '304_49.7', '305_51.1', '305_51.9', '305_53.5', 
-            '309_127.8', '309_424.2', '309_425.2', '311_429.4', '315_149.8', '325_210.6', '326_422.0', 
-            '326_424.1', '327_236.3', '327_390.9', '327_391.7', '327_394.3', '327_394.8', '329_37.4', 
-            '335_197.7', '335_222.5', '335_224.7', '337_45.9', '343_343.2', '345_210.5', '349_208.8', 
-            '350_206.5', '353_212.4', '367_257.4', '368_277.5', '369_214.7', '370_229.0', '371_274.6', 
-            '372_181.3', '372_261.1', '373_230.4', '391_164.5', '391_168.0', '392_210.8', '393_222.4', 
-            '397_395.0', '410_233.3', '411_300.5', '411_304.5', '412_290.8', '412_301.8', '414_355.3', 
-            '425_403.5', '431_273.7', '439_372.1', '440_44.7', '442_374.0', '446_232.5', '446_234.9', 
-            '447_298.1', '450_246.2', '450_264.1', '458_236.5', '458_245.2', '463_279.9', '463_294.3', 
-            '465_256.2', '470_226.5', '474_334.3', '475_273.3', '477_330.9', '481_278.3', '491_362.0', 
-            '493_373.1', '494_375.2', '494_383.8', '495_354.2', '496_326.4', '498_252.2', '498_284.9', 
-            '498_288.7', '499_314.1', '500_236.3', '500_283.0', '500_325.1', '501_284.6', '501_296.7', 
-            '502_263.1', '502_287.7', '504_149.1', '504_365.5', '508_289.0', '508_335.7', '509_253.8', 
-            '509_269.1', '510_367.3', '512_296.4', '514_257.0', '514_258.6', '515_255.2', '517_321.8', 
-            '521_217.7', '521_271.9', '522_295.2', '523_324.1', '525_280.2', '528_214.9', '529_343.5', 
-            '532_258.7', '533_240.9', '533_250.0', '533_256.4', '535_349.5', '540_200.4', '542_376.7', 
-            '545_309.7', '552_285.4', '553_278.7', '553_285.3', '560_310.8', '561_231.5', '561_281.6', 
-            '561_285.3', '562_267.8', '562_276.6', '563_216.0', '563_234.6', '563_328.2', '565_163.7', 
-            '568_276.7', '575_143.4', '575_146.5', '576_139.2', '576_248.8', '577_182.0', '577_206.7', 
-            '577_207.9', '578_187.4', '579_224.3', '579_257.3', '581_226.3', '581_247.1', '581_260.7', 
-            '582_252.8', '582_266.4', '583_264.9', '593_272.7', '594_245.7', '596_203.2', '596_204.4', 
-            '596_207.0', '596_274.5', '598_246.3', '598_246.9', '603_251.9', '609_259.8', '609_371.5', 
-            '611_367.3', '611_382.6', '612_333.9', '612_334.5', '625_134.7', '636_337.9', '660_205.6', 
-            '666_325.1', '670_439.9', '673_316.7', '687_268.2', '688_296.4', '688_303.5', '689_268.0', 
-            '689_275.0', '689_275.5', '689_283.9', '689_432.3', '690_241.9', '690_245.2', '690_432.3', 
-            '690_432.5', '697_259.3', '697_272.9', '697_282.1', '708_436.0', '716_425.4', '716_440.1', 
-            '725_307.1', '726_312.1', '726_314.9', '736_125.5', '739_255.0', '740_262.1', '741_261.6', 
-            '741_277.4', '742_251.5', '742_256.3', '742_282.0', '746_421.1', '747_418.6', '747_431.6', 
-            '755_239.5', '755_268.8', '758_210.5', '758_229.4', '759_210.2', '761_211.7', '761_399.3', 
-            '764_338.9', '764_345.9', '776_256.2', '799_56.5', '800_345.4', '800_55.8', '800_57.0', 
-            '800_59.6', '806_228.2', '807_227.5', '817_303.1', '817_320.2', '824_247.5', '824_270.2', 
-            '825_293.0', '825_300.0', '825_314.2', '826_288.5', '826_305.2', '827_288.0', '832_232.3', 
-            '832_250.1', '833_249.1', '833_258.8', '833_259.1', '834_224.6', '834_228.6', '834_264.1', 
-            '835_234.5', '835_237.7', '835_296.1', '836_304.1', '836_353.4', '837_261.8', '837_294.3', 
-            '839_244.6', '840_248.9', '841_274.9', '847_177.9', '847_216.8', '847_220.5', '848_186.8', 
-            '848_188.3', '849_186.5', '849_216.4', '849_217.4', '849_220.7', '850_235.8', '851_202.5', 
-            '851_221.5', '851_232.7', '852_199.0', '852_226.9', '852_259.4', '855_257.4', '856_213.8', 
-            '863_180.3', '865_182.1', '866_186.0', '867_171.1', '868_195.0', '868_228.4', '869_195.5', 
-            '869_204.4', '870_207.3', '871_175.3', '889_187.7']
+#                features = ['830_291.0', '831_278.4', '739_256.6', '832_275.7', '833_291.0', '561_236.1', '688_300.8', '756_241.1', '593_276.4', '525_290.2',
+# '691_300.9', '691_299.4', '834_230.7', '579_224.5', '690_299.8', '533_250.6', '289_226.5', '836_273.8', '564_239.2', '851_228.7', '195_44.1', '463_281.8', 
+# '577_177.9', '610_261.6', '464_252.1', '560_299.9', '273_260.2',  '272_256.7', '526_360.5', '849_190.0', '740_259.2', '517_326.3', '453_221.5', '353_222.5', 
+# '833_166.8', '210_47.9', '561_208.6', '548_256.2', '344_329.6', '545_257.3', '439_374.3', '594_271.9', '191_222.3', '579_225.8', '192_47.4', '410_366.5', 
+# '515_327.3', '368_264.2', '193_46.8', '562_259.5', '194_45.3', '423_409.8', '393_165.1', '578_221.3', '452_222.3', '902_221.9', '574_146.2', '329_390.6',
+# '219_44.1', '118_109.9', '610_259.2', '393_174.8', '305_248.6', '612_308.9', '221_44.6', '220_44.4', '178_42.8', '848_182.7', '222_45.2',
+# '691_433.7', '918_205.7', '181_42.1', '303_47.8', '293_312.1', '336_227.5', '396_178.4', '487_396.1', '727_361.7', '547_256.5', '707_222.0', '274_261.2', '835_202.6',
+# '479_229.8', '257_328.2', '293_443.9', '378_43.7', '164_211.0', '778_255.7', '690_432.3', '245_247.7', '294_443.5', '692_432.8', '381_43.3', 
+# '290_195.7', '483_366.5', '725_314.3', '866_204.8', '329_192.2', '295_441.3', '217_42.8', '382_43.7', '652_283.6', '428_314.9', '209_46.9', 
+# '328_382.3', '704_436.3', '311_431.5', '278_43.9', '850_216.6', '429_44.1', '277_43.1', '705_436.4', '335_229.4', '538_43.7', '379_43.1',
+#  '476_47.3', '234_48.4', '669_437.4', '203_91.5', '312_164.2', '309_127.7', '369_228.8', '615_44.8', '380_43.3', '271_41.4', '474_46.0', 
+#  '433_265.2', '327_193.6', '535_44.2', '370_212.5', '597_205.6', '536_43.8', '276_41.6', '723_301.1', '207_328.6', '626_130.0', '868_226.2', 
+#  '456_168.3', '264_47.6', '233_49.0', '777_258.4', '355_198.2', '475_46.4', '326_238.5', '371_210.2', '287_72.7', '133_55.4', '607_43.4', '310_426.4',
+# '311_151.2', '348_203.0', '353_197.1', '432_262.4']
+                
+                #input_data_model = input_data_prep['features']
 
-                input_data_model = input_data_prep[features]
+                input_data_model = input_data_prep
 
                 st.dataframe(input_data_model)
         
@@ -582,12 +556,12 @@ if option == 'Maytenus ilicifolia':
 
                 result = pd.DataFrame(input_data_model.index)
 
-                result['prediction'] = model_maytenus.predict(input_data_model)
+                result['prediction'] = model_maytenus.predict_proba(input_data_model)[:, 1]
 
                 result.rename(columns={0:'sample'},inplace=True)
 
-                result.loc[result.prediction > 0, 'prediction'] = '*Maytenus ilicifolia*'
-                result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
+                #result.loc[result.prediction > 0, 'prediction'] = '*Maytenus ilicifolia*'
+                #result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
 
 # processing the result to show
                 result_markdown = tabulate(result, headers='keys', tablefmt='pipe')
@@ -611,29 +585,24 @@ else:
                 input_data_prep = input_data_prep.set_index('index').T
 
 # feature selection
-                features = ['1000_336.4', '119_269.9', '119_335.1', '121_317.2', '122_318.9', '145_527.0', '163_179.5', 
-                            '163_244.0', '163_335.3', '165_226.6', '165_317.6', '165_331.3', '166_227.0', '206_402.0', 
-                            '210_221.6', '240_397.6', '241_385.8', '264_421.2', '301_360.6', '303_547.0', '324_236.3', 
-                            '326_178.3', '326_178.7', '326_243.6', '326_244.0', '327_227.2', '328_227.3', '329_226.3', 
-                            '348_310.1', '349_169.8', '350_334.5', '358_303.0', '362_242.7', '362_243.1', '363_328.2', 
-                            '364_227.4', '368_236.2', '368_338.6', '372_246.0', '378_43.9', '381_148.0', '387_206.9', 
-                            '388_208.9', '388_209.6', '388_515.2', '389_515.1', '390_514.7', '398_370.2', '401_353.7', 
-                            '402_353.0', '403_350.2', '404_321.8', '404_463.1', '405_325.4', '406_325.8', '407_324.9', 
-                            '422_525.9', '448_530.0', '482_265.5', '483_264.8', '488_345.3', '488_515.1', '488_573.2', 
-                            '489_334.6', '490_572.8', '500_339.2', '506_312.4', '521_535.7', '522_527.1', '526_264.8', 
-                            '526_355.0', '527_263.7', '528_264.9', '530_341.7', '532_43.0', '533_43.2', '534_43.0', 
-                            '535_211.4', '535_43.1', '536_43.2', '548_250.7', '548_327.8', '548_530.2', '549_309.4', 
-                            '549_531.1', '560_313.9', '572_349.6', '572_350.2', '574_375.2', '575_376.7', '576_380.0', 
-                            '586_500.6', '587_512.6', '588_513.9', '610_275.3', '624_310.9', '626_329.5', '641_281.4', 
-                            '650_332.4', '651_285.0', '652_178.9', '652_243.6', '652_315.1', '653_233.8', '653_315.7', 
-                            '654_227.6', '654_327.3', '655_225.1', '655_328.7', '656_226.6', '658_574.1', '674_243.2', 
-                            '680_176.0', '680_178.3', '680_346.9', '681_229.6', '682_174.2', '682_229.8', '687_200.9', 
-                            '688_206.1', '688_206.2', '696_330.3', '697_290.4', '699_344.3', '700_345.9', '701_176.6', 
-                            '707_346.3', '710_347.4', '712_319.2', '799_406.7', '800_406.6', '840_204.7', '874_348.3', 
-                            '876_358.1', '877_357.5', '878_356.8', '904_379.5', '918_352.7', '918_361.2', '920_358.2', 
-                            '920_358.5', '928_313.5', '940_39.9', '946_388.4', '963_363.0', '985_574.1']
+                #features = ['1000_338.1', '119_337.1', '121_320.5', '136_572.4', '163_247.9', '163_337.4', 
+                #            '165_230.9', '165_321.0', '181_42.3', '191_176.4', '204_46.9', '210_44.6', 
+                #            '216_43.0', '217_43.2', '241_572.8', '278_530.2', '302_547.3', '306_209.5', 
+                #            '318_433.7', '326_181.2', '326_247.9', '328_231.5', '336_390.4', '338_337.0', 
+                #            '342_40.8', '350_172.5', '354_323.2', '362_247.4', '372_250.1', '378_43.5', 
+                #            '388_39.7', '388_515.4', '390_515.1', '400_522.1', '406_328.8', '410_348.7', 
+                #            '422_526.5', '424_380.9', '434_279.6', '440_356.3', '442_356.4', '448_530.3', 
+                #            '450_298.3', '472_40.0', '478_319.0', '482_269.5', '484_349.2', '488_348.4', 
+                #            '490_371.4', '492_344.6', '494_299.4', '500_338.9', '514_350.0', '516_323.2', 
+                #            '526_269.6', '530_342.2', '534_211.1', '534_43.5', '548_530.5', '550_343.8', 
+                #            '560_332.3', '572_353.1', '574_377.6', '594_310.9', '610_280.1', '612_257.3', 
+                #            '626_333.6', '640_284.1', '652_181.2', '652_247.9', '652_319.3', '654_247.9', 
+                #            '655_331.2', '656_231.0', '674_247.9', '680_179.4', '708_176.2', '794_545.8', 
+                #            '817_546.4', '874_353.3', '876_360.2', '904_381.6', '918_353.8', '920_360.1', 
+                #            '923_330.0', '940_376.4', '946_391.7', '962_367.5']
 
-                input_data_model = input_data_prep[features]
+                #input_data_model = input_data_prep[features]
+                input_data_model = input_data_prep
 
                 st.dataframe(input_data_model)
         
@@ -642,12 +611,12 @@ else:
 
                 result = pd.DataFrame(input_data_model.index)
 
-                result['prediction'] = model_mikania.predict(input_data_model)
+                result['prediction'] = model_mikania.predict_proba(input_data_model)[:, 1]
 
                 result.rename(columns={0:'sample'},inplace=True)
 
-                result.loc[result.prediction > 0, 'prediction'] = '*Mikania laevigata*'
-                result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
+                #result.loc[result.prediction > 0, 'prediction'] = '*Mikania laevigata*'
+                #result.loc[result.prediction == 0, 'prediction'] = 'Unknown'
 
 # processing the result to show
                 result_markdown = tabulate(result, headers='keys', tablefmt='pipe')

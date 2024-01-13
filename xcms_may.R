@@ -4,13 +4,13 @@ suppressMessages(library(CAMERA))
 
 xset <- xcmsSet( 
         method   = "matchedFilter",
-        fwhm     = 29.4,
-        snthresh = 16.1595968, #16.1595968
+        fwhm     = 18, #29.4
+        snthresh = 3, #16.1595968
         step     = 1,
-        steps    = 12,
-        sigma    = (29.4/2.3548), #12.4851367419738,
-        max      = 5,
-        mzdiff   = -11, # -11 WAS THE STANDARD
+        steps    = 12,#12
+        sigma    = 12.48, #12.48
+        max      = 3,#5
+        mzdiff   = 1,#-8.2
         index    = FALSE)
 
 xset2 <- retcor( 
@@ -19,22 +19,22 @@ xset2 <- retcor(
         plottype       = "none",
         distFunc       = "cor_opt",
         profStep       = 1,
+        #center         = datafiles[625], #625, #625 train, 182 val
         response       = 1,
-        gapInit        = 0.26,
-        gapExtend      = 2.1,
+        gapInit        = 0.2,
+        gapExtend      = 2.4,
         factorDiag     = 2,
         factorGap      = 1,
         localAlignment = 0)
 
-
 xset3 <- group( 
         xset2,
         method  = "density",
-        bw      = 50,
-        mzwid   = 1,
-        minfrac = 0.1,
-        minsamp = 1,
-        max     = 50)
+        bw      = 29.2,
+        mzwid   = 1,#0.035
+        minfrac = 0.05, #0.7
+        minsamp = 1, #50 (original. Changed to 1 to garantee will have something. Further filtering done later on)
+        max     = 100)
 
 xset4 <- fillPeaks(xset3)
 
