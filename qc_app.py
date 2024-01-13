@@ -8,7 +8,7 @@ import glob
 import io
 import pickle
 import time
-from tabulate import tabulate
+#from tabulate import tabulate
 from sklearn.svm import SVC
 #from sklearn import metrics
 
