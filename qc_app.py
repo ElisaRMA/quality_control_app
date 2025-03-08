@@ -38,17 +38,17 @@ def install_bioc_packages():
     
     # Install BiocManager if not present
     if (!requireNamespace("BiocManager", quietly = TRUE)) {
-        install.packages("BiocManager", repos = "https://cloud.r-project.org", lib = "./R_libs")
+        install.packages("BiocManager", lib = "./R_libs")
     }
     
     # Use Bioconductor version 3.12, which is compatible with R 4.0.x
     BiocManager::install(version = "3.12", lib = "./R_libs")
     
     # Install xcms version 3.10.1
-    BiocManager::install("xcms", version = "3.10.1", lib = "./R_libs", update = FALSE, ask = FALSE)
+    BiocManager::install("xcms")
     
     # Install CAMERA version 1.44.0
-    BiocManager::install("CAMERA", version = "1.44.0", lib = "./R_libs", update = FALSE, ask = FALSE)
+    BiocManager::install("CAMERA")
     
     # Verify installations
     packageVersion("xcms")
@@ -283,7 +283,7 @@ def load_refdata_maytenus():
 # ----------- objects to run locally ----------- #
 
 # add Rscript into path variable
-os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
+#os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
 
 # ----------- App ----------- #
 
