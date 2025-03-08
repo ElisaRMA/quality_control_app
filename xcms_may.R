@@ -1,7 +1,11 @@
 options(warn=-1)
+if (!requireNamespace("BiocManager", quietly=TRUE))
+        install.packages("BiocManager")
+
 BiocManager::install(version = "1.30.16")
 BiocManager::install("xcms", version = "1.30.16")
 BiocManager::install("CAMERA", version = "1.30.16")
+
 suppressMessages(library(xcms))
 suppressMessages(library(CAMERA))
 
