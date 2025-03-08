@@ -41,14 +41,14 @@ def install_bioc_packages():
         install.packages("BiocManager", lib = "./R_libs")
     }
     
-    # Use Bioconductor version 3.12, which is compatible with R 4.0.x
-    BiocManager::install(version = "3.12", lib = "./R_libs")
+    # Use Bioconductor version 3.11, which is compatible with R 4.0.x
+    BiocManager::install(version = "3.11", lib = "./R_libs")
     
     # Install xcms version 3.10.1
-    BiocManager::install("xcms")
+    BiocManager::install("xcms",version = "3.11")
     
     # Install CAMERA version 1.44.0
-    BiocManager::install("CAMERA")
+    BiocManager::install("CAMERA",version = "3.11")
     
     # Verify installations
     packageVersion("xcms")
