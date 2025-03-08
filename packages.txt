@@ -1,3 +1,3 @@
-r-base=4.0.5
+r-base(4.0.5)
 r-base-dev
-r-cran-biocmanager=1.30.25
+r-cran-biocmanager(1.30.25)
