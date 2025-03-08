@@ -36,18 +36,26 @@ def install_bioc_packages():
     # Set a custom library path
     .libPaths(c("./R_libs", .libPaths()))
     
-    if (!requireNamespace("BiocManager", quietly = TRUE) || packageVersion("BiocManager") != "1.30.25") {
-        install.packages("BiocManager", version = "1.30.25", repos = "https://cloud.r-project.org", lib = "./R_libs")
+    # Install BiocManager if not present
+    if (!requireNamespace("BiocManager", quietly = TRUE)) {
+        install.packages("BiocManager", repos = "https://cloud.r-project.org", lib = "./R_libs")
     }
     
     # Use Bioconductor version 3.12, which is compatible with R 4.0.x
     BiocManager::install(version = "3.12", lib = "./R_libs")
     
-    # Install your specific Bioconductor package
-    BiocManager::install("xcms", lib = "./R_libs")
-    BiocManager::install("CAMERA", lib = "./R_libs")
+    # Install xcms version 3.10.1
+    BiocManager::install("xcms", version = "3.10.1", lib = "./R_libs", update = FALSE, ask = FALSE)
+    
+    # Install CAMERA version 1.44.0
+    BiocManager::install("CAMERA", version = "1.44.0", lib = "./R_libs", update = FALSE, ask = FALSE)
+    
+    # Verify installations
+    packageVersion("xcms")
+    packageVersion("CAMERA")
     """
-    subprocess.run(["Rscript", "-e", r_code], check=True)
+    
+    result = subprocess.run(["Rscript", "-e", r_code], capture_output=True, text=True)
 
 
 
