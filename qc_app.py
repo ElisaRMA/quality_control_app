@@ -36,8 +36,8 @@ def install_bioc_packages():
     # Set a custom library path
     .libPaths(c("./R_libs", .libPaths()))
     
-    if (!requireNamespace("BiocManager", quietly = TRUE) || packageVersion("BiocManager") != "1.30.25") {
-        install.packages("BiocManager", version = "1.30.25", repos = "https://cloud.r-project.org")
+    if (!requireNamespace("BiocManager", quietly = TRUE)) {
+        install.packages("BiocManager", repos = "https://cloud.r-project.org")
     }
     
     # Install your specific Bioconductor package
