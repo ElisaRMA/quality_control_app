@@ -36,8 +36,8 @@ def install_bioc_packages():
     # Set a custom library path
     .libPaths(c("./R_libs", .libPaths()))
     
-    if (!requireNamespace("BiocManager", quietly = TRUE)) {
-        install.packages("BiocManager", repos = "https://cloud.r-project.org")
+    if (!requireNamespace("BiocManager", quietly = TRUE) || packageVersion("BiocManager") != "1.30.25") {
+        install.packages("BiocManager", version = "1.30.25", repos = "https://cloud.r-project.org")
     }
     
     # Install your specific Bioconductor package
@@ -345,6 +345,7 @@ if st.button('Run XCMS') and uploaded_files is not None:
             with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
                 zip_ref.extractall(output_folder)
         
+            install_bioc_packages()
             process1 = subprocess.run(["Rscript", xcms_may], stdout=subprocess.PIPE, cwd=output_folder)
             st.write(process1.stdout)
 
