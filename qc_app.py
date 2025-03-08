@@ -44,8 +44,8 @@ def install_bioc_packages():
     BiocManager::install(version = "3.12", lib = "./R_libs")
     
     # Install your specific Bioconductor package
-    BiocManager::install("xcms", version = "3.10", lib = "./R_libs")
-    BiocManager::install("CAMERA", version = "1.44", lib = "./R_libs")
+    BiocManager::install("xcms", lib = "./R_libs")
+    BiocManager::install("CAMERA", lib = "./R_libs")
     """
     subprocess.run(["Rscript", "-e", r_code], check=True)
 
