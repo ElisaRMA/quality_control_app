@@ -295,8 +295,8 @@ option = st.selectbox(
 uploaded_files = st.file_uploader('Choose a zipped folder with subfolders for each sample. Each file also needs to be in the mzXML format.', type='zip', accept_multiple_files=False, help='Only rar files are accepted')
 
 # to get the xcms R scripts
-xcms_may = os.getcwd() + "\\xcms_may.R"
-xcms_mik = os.getcwd() + "\\xcms_mik.R"
+xcms_may = os.getcwd() + "/xcms_may.R"
+xcms_mik = os.getcwd() + "/xcms_mik.R"
 
 # R.exe on local machine
 #command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
