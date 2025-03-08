@@ -16,3 +16,4 @@ libfreetype6-dev
 libpng-dev
 libtiff5-dev
 libjpeg-dev
+libcairo2-dev
