@@ -36,21 +36,36 @@ def install_bioc_packages():
     # Set a custom library path
     .libPaths(c("./R_libs", .libPaths()))
     
+    # Install BiocManager if not already installed
+    if (!requireNamespace("BiocManager", quietly = TRUE))
+        install.packages("BiocManager", lib = "./R_libs")
+    
     # Use Bioconductor version 3.11, which is compatible with R 4.0.x
-    BiocManager::install(version = "3.11", lib = "./R_libs",'ask = FALSE)
+    BiocManager::install(version = "3.11", lib = "./R_libs", ask = FALSE)
     
     # Install xcms version 3.10.1
-    BiocManager::install("xcms",ask = FALSE)
+    BiocManager::install("xcms", lib = "./R_libs", ask = FALSE)
     
     # Install CAMERA version 1.44.0
-    BiocManager::install("CAMERA",ask = FALSE)
+    BiocManager::install("CAMERA", lib = "./R_libs", ask = FALSE)
     
     # Verify installations
-    packageVersion("xcms")
-    packageVersion("CAMERA")
+    if (!requireNamespace("xcms", quietly = TRUE)) {
+        stop("xcms package not found!")
+    }
+    if (!requireNamespace("CAMERA", quietly = TRUE)) {
+        stop("CAMERA package not found!")
+    }
     """
     
-    result = subprocess.run(["Rscript", "-e", r_code], text=True)
+    result = subprocess.run(["Rscript", "-e", r_code], text=True, capture_output=True)
+    
+    # Print the output and error for debugging
+    print(result.stdout)
+    print(result.stderr)
+    
+    if result.returncode != 0:
+        raise Exception("Failed to install Bioconductor packages.")
 
 
 

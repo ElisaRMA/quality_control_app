@@ -1,5 +1,11 @@
-r-base-core
+r-base
 r-cran-biocmanager
 libnetcdf-dev
 libhdf5-dev
 libxml2-dev
+libssl-dev
+libcurl4-openssl-dev
+libopenblas-dev
+liblapack-dev
+libudunits2-dev
+libgdal-dev

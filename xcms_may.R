@@ -1,5 +1,5 @@
+.libPaths(c("./R_libs", .libPaths()))
 options(warn=-1)
-
 suppressMessages(library(xcms))
 suppressMessages(library(CAMERA))
 
