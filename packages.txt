@@ -1,2 +1,5 @@
 r-base
 r-base-dev
+libnetcdf-dev
+libhdf5-dev
+libxml2-dev
