@@ -246,7 +246,7 @@ def load_refdata_maytenus():
 # ----------- objects to run locally ----------- #
 
 # add Rscript into path variable
-#os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
+os.environ['PATH'] += ';' + r'D:\Program Files\R\R-4.0.5\\bin\Rscript'
 
 # ----------- App ----------- #
 
