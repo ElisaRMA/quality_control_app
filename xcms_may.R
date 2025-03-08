@@ -1,9 +1,7 @@
 options(warn=-1)
-if (!requireNamespace("BiocManager", quietly=TRUE))
-        install.packages("BiocManager")
 
-BiocManager::install("xcms", version = "1.30")
-BiocManager::install("CAMERA", version = "1.30")
+BiocManager::install("xcms")
+BiocManager::install("CAMERA")
 
 suppressMessages(library(xcms))
 suppressMessages(library(CAMERA))
