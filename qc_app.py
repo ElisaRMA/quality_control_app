@@ -37,8 +37,11 @@ def install_bioc_packages():
     .libPaths(c("./R_libs", .libPaths()))
     
     if (!requireNamespace("BiocManager", quietly = TRUE) || packageVersion("BiocManager") != "1.30.25") {
-        install.packages("BiocManager", version = "1.30.25", repos = "https://cloud.r-project.org")
+        install.packages("BiocManager", version = "1.30.25", repos = "https://cloud.r-project.org", lib = "./R_libs")
     }
+    
+    # Use Bioconductor version 3.12, which is compatible with R 4.0.x
+    BiocManager::install(version = "3.12", lib = "./R_libs")
     
     # Install your specific Bioconductor package
     BiocManager::install("xcms", version = "3.10", lib = "./R_libs")
