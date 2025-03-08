@@ -1,8 +1,5 @@
 options(warn=-1)
 
-BiocManager::install("xcms")
-BiocManager::install("CAMERA")
-
 suppressMessages(library(xcms))
 suppressMessages(library(CAMERA))
 

@@ -23,6 +23,32 @@ from sklearn.pipeline import Pipeline
 # ----------- Python pipeline functions ----------- #
 st.set_page_config(layout="wide")
 
+
+import subprocess
+import os
+
+@st.cache_resource
+def install_bioc_packages():
+    # Create a directory your app can write to
+    os.makedirs("R_libs", exist_ok=True)
+    
+    r_code = """
+    # Set a custom library path
+    .libPaths(c("./R_libs", .libPaths()))
+    
+    if (!requireNamespace("BiocManager", quietly = TRUE) || packageVersion("BiocManager") != "1.30.25") {
+        install.packages("BiocManager", version = "1.30.25", repos = "https://cloud.r-project.org")
+    }
+    
+    # Install your specific Bioconductor package
+    BiocManager::install("xcms", lib = "./R_libs")
+    BiocManager::install("CAMERA", lib = "./R_libs")
+    """
+    subprocess.run(["Rscript", "-e", r_code], check=True)
+
+
+
+
 @st.cache_resource
 def rounder(dataframe):
     '''
