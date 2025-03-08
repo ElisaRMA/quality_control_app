@@ -320,7 +320,8 @@ if st.button('Run XCMS') and uploaded_files is not None:
                 zip_ref.extractall(output_folder)
         
             process1 = subprocess.run(["Rscript", xcms_may], stdout=subprocess.PIPE, cwd=output_folder)
-    
+            st.write(process1.stdout)
+
         st.success('Done! This is the data that will be used for the Machine Learning model:')
 
     # Find the generated CSV file
@@ -333,7 +334,7 @@ if st.button('Run XCMS') and uploaded_files is not None:
             subfolder_names = [name for name in os.listdir(output_folder) if os.path.isdir(os.path.join(output_folder, name))]
 
             for subfolder_name in subfolder_names:
-                #st.write(subfolder_name)
+                st.write(subfolder_name)
                 subfolder_path = os.path.join(output_folder, subfolder_name)
                 folder_names = [name for name in os.listdir(subfolder_path) if os.path.isdir(os.path.join(subfolder_path, name))]
 
@@ -354,7 +355,7 @@ if st.button('Run XCMS') and uploaded_files is not None:
     else:
             # Read the uploaded zip folder
         zip_file_bytes = uploaded_files.getvalue()
-    
+
     # loading symbol 
         with st.spinner('Please wait ...'):
         
