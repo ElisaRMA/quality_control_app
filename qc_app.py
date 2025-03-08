@@ -299,7 +299,7 @@ xcms_may = os.getcwd() + "\\xcms_may.R"
 xcms_mik = os.getcwd() + "\\xcms_mik.R"
 
 # R.exe on local machine
-command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
+#command = "D:\Program Files\R\R-4.0.5\\bin\Rscript"
 
 # object placeholder to tbe filled later
 output_folder = "output"
@@ -319,7 +319,7 @@ if st.button('Run XCMS') and uploaded_files is not None:
             with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
                 zip_ref.extractall(output_folder)
         
-            process1 = subprocess.run([command, xcms_may], stdout=subprocess.PIPE, cwd=output_folder)
+            process1 = subprocess.run(["Rscript", xcms_may], stdout=subprocess.PIPE, cwd=output_folder)
     
         st.success('Done! This is the data that will be used for the Machine Learning model:')
 
@@ -364,7 +364,7 @@ if st.button('Run XCMS') and uploaded_files is not None:
             with zipfile.ZipFile(io.BytesIO(zip_file_bytes), 'r') as zip_ref:
                 zip_ref.extractall(output_folder_mik)
         
-            process1 = subprocess.run([command, xcms_mik], stdout=subprocess.PIPE, cwd=output_folder_mik)
+            process1 = subprocess.run(["Rscript", xcms_mik], stdout=subprocess.PIPE, cwd=output_folder_mik)
     
         st.success('Done! This is the data that will be used for the Machine Learning model:')
 
