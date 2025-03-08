@@ -58,11 +58,7 @@ def install_bioc_packages():
     }
     """
     
-    result = subprocess.run(["Rscript", "-e", r_code], text=True, capture_output=True)
-    
-    # Print the output and error for debugging
-    print(result.stdout)
-    print(result.stderr)
+    result = subprocess.run(["Rscript", "-e", r_code], text=True)
     
     if result.returncode != 0:
         raise Exception("Failed to install Bioconductor packages.")
