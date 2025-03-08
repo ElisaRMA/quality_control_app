@@ -55,7 +55,7 @@ def install_bioc_packages():
     packageVersion("CAMERA")
     """
     
-    result = subprocess.run(["Rscript", "-e", r_code], capture_output=True, text=True)
+    result = subprocess.run(["Rscript", "-e", r_code], text=True)
 
 
 
