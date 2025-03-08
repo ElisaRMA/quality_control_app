@@ -44,10 +44,10 @@ def install_bioc_packages():
     BiocManager::install(version = "3.11", lib = "./R_libs", ask = FALSE)
     
     # Install xcms version 3.10.1
-    BiocManager::install("xcms", lib = "./R_libs", ask = FALSE)
+    BiocManager::install("xcms", lib = "./R_libs", ask = FALSE, dependencies = c("Imports", "Depends"))
     
     # Install CAMERA version 1.44.0
-    BiocManager::install("CAMERA", lib = "./R_libs", ask = FALSE)
+    BiocManager::install("CAMERA", lib = "./R_libs", ask = FALSE, dependencies = c("Imports", "Depends"))
     
     # Verify installations
     if (!requireNamespace("xcms", quietly = TRUE)) {
