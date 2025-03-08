@@ -51,7 +51,7 @@ def install_bioc_packages():
     BiocManager::install(version = "3.11", lib = "./R_libs", ask = FALSE, dependencies = c("Imports", "Depends"))
     
     # Update Matrix package
-    install.packages("Matrix", lib = "./R_libs", version = "1.6.0", ask = FALSE)
+    install.packages("Matrix", lib = "./R_libs", version = "1.3.0", ask = FALSE)
 
     # Install specific versions of xcms and CAMERA
     BiocManager::install("xcms", lib = "./R_libs", ask = FALSE, dependencies = c("Imports", "Depends"))
